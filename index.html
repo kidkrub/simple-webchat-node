@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="socket.io/socket.io.js"></script>
+    <link rel="stylesheet" type="text/css" href="/styles/styles.css">
+    <title>Web Chat App</title>
+  </head>
+  <body>
+    <div id="login-area">
+      <div id="login-text"><h1>Login</h1></div>
+        <form id="login-form">
+          <input id="username" type="text" placeholder="Username" autocomplete="off">
+          <input id="login-submit" type="submit" value="login">
+        </form>
+    </div>
+    <div id="chat-area">
+      <div id="users-area">
+        <div id="online-users-text">
+          <h1>Online User :</h1>
+        </div>
+        <div id="online-users">
+          <ul id="user"></ul>
+        </div>
+      </div>
+      <div id="message-area">
+        <div id="display-message-area">
+          <ul id="messages"></ul>
+        </div>
+        <div id="message-form-area">
+          <form id="message-form">
+            <input id="message" type="text" placeholder="Type you message here" autocomplete="off">
+            <input id="message-submit" type="submit" value="Send"> 
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script type="text/javascript">
+      var socket = io();
+    function updateUsers(list) {
+      for(var i=0; i < list.length; i++) {
+        $("#user").append("<li>" + list[i] + "</li>");
+      }
+    }
+    $("#login-form").submit(function (event){
+      event.preventDefault();
+      if($("#username").val().trim().length === 0){
+        alert("Invalid Username");
+      }
+      else{
+        $username = $("#username").val();
+        $("#login-area").hide();
+        $("#chat-area").show();
+        $("#messages").html("");
+        socket.emit("has connected", $username);
+      }
+    });
+    
+    $("#message-form").submit(function (event){
+      event.preventDefault();
+      if($("#message").val().trim().length === 0) {
+        alert("You can't send empty message");
+      }
+      else {
+        socket.emit("new message", {username: $username,message: $("#message").val()});
+        $("#message").val("");
+      }
+    });
+    
+    socket.on("has connected", function(data) {
+      $("#user").html("");
+      updateUsers(data.usersList);
+      $("#messages").append("<li><i><b>" + data.username + "</b> has connected</i></li>");
+    });
+    socket.on("has disconnected", function(data) {
+      $("#user").html("");
+      updateUsers(data.usersList);
+      $("#messages").append("<li><i><b>" + data.username + "</b> has disconnected</i></li>");
+    });
+    
+    socket.on("new message", function(data) {
+      $("#messages").append("<li><b>" + data.username + "</b>: " + data.message + "</li>");
+    });
+  </script>
+</html>
